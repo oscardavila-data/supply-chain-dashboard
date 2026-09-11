@@ -1,7 +1,6 @@
 # supply-chain-dashboard
 "Supply chain financial and operational dashboard built with Power BI. Analyzes delivery risks, financial impact of delays, and optimization opportunities."
 
-markdown
 # Supply Chain Analytics & Operational Diagnostics — DataCo Global
 
 ![Power BI](https://img.shields.io/badge/Power%20BI-Data%20Analytics-F2C811?logo=powerbi&logoColor=black)
@@ -75,7 +74,7 @@ The project uses a star-schema-oriented model with a central `fact_orders` table
 
 ### Data Model
 
-![Data Model](images/data-model.png)
+![Data Model](images/data_model.png)
 
 The `fact_orders` table is stored at **order-item level**. This means that a single `order_id` can contain multiple `order_item_id` records.
 
@@ -104,11 +103,18 @@ The workflow was:
 
 Raw Dataset -> PostgreSQL -> Data Cleaning & Transformation -> Relational / Star-Schema Model -> Power BI Data Model -> DAX Measures -> Interactive Dashboard
 
+### SQL Transformation Script
+
+![SQL Transform](images/postgres_transform_script1.png),![SQL Transform](images/postgres_transform_script2.png)
+
+
+### PostgreSQL Schema
+
+![PostgreSQL Schema](images/postgres_schema.png)
+
 The SQL transformation scripts used for the project are available in:
+
 /sql/transform.sql
-
-text
-
 ---
 
 ## Analytical Approach
@@ -150,36 +156,33 @@ The project includes DAX measures for financial performance, profitability and s
 
 ### Total Sales
 
-```dax
+```
 Total Sales =
 SUM(fact_orders[net_sales])
-Total Shipments
-dax
+
 Total Shipments =
 CALCULATE(
     DISTINCTCOUNT(fact_orders[order_id]),
     dim_shipments[delivery_status] <> "Shipping canceled"
 )
-Late Deliveries
-dax
+
 Late Deliveries =
 CALCULATE(
     DISTINCTCOUNT(fact_orders[order_id]),
     dim_shipments[late_risk] = 1,
     dim_shipments[delivery_status] <> "Shipping canceled"
 )
-Late Delivery Rate
-dax
+
 Late Delivery Rate % =
 DIVIDE(
     [Late Deliveries],
     [Total Shipments],
     0
 )
+
 Revenue Exposure
 Revenue Exposure represents net sales associated with shipments flagged as late-risk, excluding canceled shipments.
 
-dax
 Revenue Exposure =
 CALCULATE(
     SUM(fact_orders[net_sales]),
@@ -191,6 +194,8 @@ CALCULATE(
 ## Dashboard
 
 ### Page 1 — Financial Performance
+
+![Page 1](images/page1_financial_performance.png)
 
 The first page provides an executive overview of financial performance.
 
@@ -206,6 +211,8 @@ The first page provides an executive overview of financial performance.
 The page combines financial trends, regional profitability and category-level performance to provide a high-level view of the business.
 
 ### Page 2 — Supply Chain Diagnostics
+
+![Page 2](images/page2_diagnostics.png)
 
 This page focuses on delivery performance and operational risk.
 
@@ -228,6 +235,8 @@ The page allows users to investigate delivery performance by:
 A decomposition tree is used as an interactive driver exploration tool rather than as proof of causal relationships.
 
 ### Page 3 — Conclusions & Recommendations
+
+![Page 3](images/page3_conclusions.png)
 
 The final page translates the analytical findings into business-oriented conclusions and recommendations.
 
