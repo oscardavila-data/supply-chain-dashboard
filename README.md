@@ -351,8 +351,8 @@ The goal was not only to create an interactive dashboard, but to develop an anal
 **Oscar Davila**
 
 - LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/your-profile)
-- GitHub: [Your GitHub](https://github.com/your-username)
-- Email: [your-professional-email@example.com](mailto:your-professional-email@example.com)
+- GitHub: [Your GitHub](https://github.com/oscardavila-data/)
+- Email: [your-professional-email@example.com](oscar.davilaenriquez@gmail.com)
 
 ---
 
