@@ -1,0 +1,212 @@
+-- ============================================================
+-- Medidas DAX – Supply Chain Dashboard
+-- Autor: Oscar Davila
+-- Dataset: DataCo Smart Supply Chain
+-- ============================================================
+
+-- ============================================================
+-- 01. FINANCIERO Y VENTAS
+-- ============================================================
+
+-- Total Sales: Suma de ventas netas
+Total Sales = SUM(fact_orders[net_sales])
+
+-- Total Discount: Suma de descuentos aplicados
+Total Discount = SUM(fact_orders[discount_amount])
+
+-- Gross Sales: Suma de ventas brutas (antes de descuentos)
+Gross Sales = SUM(fact_orders[gross_sales])
+
+-- Discount %: Porcentaje de descuento sobre ventas brutas
+Discount % = DIVIDE([Total Discount], [Gross Sales])
+
+-- Total Orders: Número de órdenes únicas
+Total Orders = DISTINCTCOUNT(fact_orders[order_id])
+
+-- ============================================================
+-- 02. RENTABILIDAD Y MARGEN
+-- ============================================================
+
+-- Total Profit: Suma de beneficios
+Total Profit = SUM(fact_orders[profit])
+
+-- Profit Margin %: Margen de beneficio sobre ventas netas
+Profit Margin % = DIVIDE([Total Profit], [Total Sales])
+
+-- Loss Orders: Órdenes con pérdida (profit < 0)
+Loss Orders = 
+CALCULATE(
+    DISTINCTCOUNT(fact_orders[order_id]),
+    fact_orders[profit] < 0
+)
+
+-- Total Loss Amount: Monto total de pérdidas
+Total Loss Amount = 
+CALCULATE(
+    SUM(fact_orders[profit]),
+    fact_orders[profit] < 0
+)
+
+-- ============================================================
+-- 03. LOGÍSTICA Y OPERACIONES
+-- ============================================================
+
+-- Total Shipments: Envíos totales (excluyendo cancelados)
+Total Shipments = 
+CALCULATE(
+    DISTINCTCOUNT(fact_orders[order_id]),
+    dim_shipments[delivery_status] <> "Shipping canceled"
+)
+
+-- Late Deliveries: Entregas tardías (late_risk = 1)
+Late Deliveries = 
+CALCULATE(
+    DISTINCTCOUNT(fact_orders[order_id]),
+    dim_shipments[late_risk] = 1,
+    dim_shipments[delivery_status] <> "Shipping canceled"
+)
+
+-- Late Delivery Rate %: Tasa de entregas tardías
+Late Delivery Rate % = 
+DIVIDE(
+    [Late Deliveries], 
+    [Total Shipments], 
+    0
+)
+
+-- Revenue Exposure: Ventas en riesgo por retrasos
+Revenue Exposure = 
+CALCULATE(
+    SUM(fact_orders[net_sales]),
+    dim_shipments[late_risk] = 1,
+    dim_shipments[delivery_status] <> "Shipping canceled"
+)
+
+-- Avg Delay Days: Promedio de días de retraso
+Avg Delay Days = 
+CALCULATE(
+    AVERAGEX(
+        VALUES(fact_orders[order_id]),
+        CALCULATE(
+            AVERAGE(dim_shipments[real_shipping_days]) - AVERAGE(dim_shipments[scheduled_shipping_days])
+        )
+    ),
+    dim_shipments[delivery_status] <> "Shipping canceled"
+)
+
+-- ============================================================
+-- 04. KPIs Y BADGES (UI)
+-- ============================================================
+
+-- LateRateTarget: Target de tasa de retraso (35%)
+LateRateTarget = 0.35
+
+-- LateRateBadge: Badge de comparación vs target
+LateRateBadge = 
+VAR Target = [LateRateTarget]
+VAR Actual = [Late Delivery Rate %]
+VAR Gap = (Actual - Target) * 100
+VAR Sign = IF(Gap >= 0, "+", "")
+RETURN
+Sign & FORMAT(Gap, "0.0") & " pp vs target " & FORMAT(Target, "0%")
+
+-- LateRateBadgeColor: Color del badge según tasa de retraso
+LateRateBadgeColor = 
+SWITCH(
+    TRUE(),
+    [Late Delivery Rate %] > 0.8, "#D9534F",   // rojo crítico
+    [Late Delivery Rate %] > 0.5, "#FF7A45",   // naranja alto
+    [Late Delivery Rate %] <= 0.5, "#2E8B57"   // verde bueno
+)
+
+-- RevenueExposureTarget: Target de exposición ($16M)
+RevenueExposureTarget = 16000000
+
+-- RevenueExposureBadge: Badge de comparación vs target
+RevenueExposureBadge = 
+VAR Target = [RevenueExposureTarget]
+VAR Actual = [Revenue Exposure]
+VAR Gap = Actual - Target
+VAR Sign = IF(Gap >= 0, "+", "")
+RETURN
+Sign & FORMAT(Gap / 1000000, "0.0") & " M    vs target $" & FORMAT(Target / 1000000, "0.0") & " M"
+
+-- RevenueExposureBadgeColor: Color del badge según exposición
+RevenueExposureBadgeColor = 
+SWITCH(
+    TRUE(),
+    [Revenue Exposure] > [RevenueExposureTarget], "#D9534F",   // rojo crítico
+    [Revenue Exposure] > [RevenueExposureTarget] * 0.9, "#FF7A45", // naranja
+    [Revenue Exposure] <= [RevenueExposureTarget] * 0.9, "#2E8B57" // verde
+)
+
+-- LateRateColor: Color de fondo para formato condicional
+LateRateColor = 
+SWITCH(
+    TRUE(),
+    [Late Delivery Rate %] > 0.8, "#FDEDEC",   // rojo claro
+    [Late Delivery Rate %] > 0.5, "#FFF3CD",   // amarillo suave
+    "#E8F5E9"                                 // verde claro
+)
+
+-- ProfitMarginDelta: Delta de margen vs target (11.5%)
+ProfitMarginDelta = 
+VAR Target = 0.115
+VAR Actual = [Profit Margin %]
+VAR Gap = (Actual - Target) * 100
+VAR Sign = IF(Gap >= 0, "+", "")
+RETURN
+Sign & FORMAT(Gap, "0.0") & " pp vs target " & FORMAT(Target, "0.0%")
+
+-- ProfitMarginDeltaColor: Color del delta de margen
+ProfitMarginDeltaColor = 
+VAR Target = 0.115
+VAR Actual = [Profit Margin %]
+VAR Gap = (Actual - Target) * 100
+RETURN
+SWITCH(
+    TRUE(),
+    Gap > 0.2, "#2E8B57",      // verde mejora
+    ABS(Gap) <= 0.2, "#F28C28", // naranja estable
+    Gap < -0.2, "#D9534F"       // rojo empeora
+)
+
+-- LossAmountDelta: Delta de pérdida vs mes anterior
+LossAmountDelta = 
+VAR PrevMonth =
+    CALCULATE([Total Loss Amount], DATEADD('dim_date'[Date], -1, MONTH))
+VAR Actual = [Total Loss Amount]
+VAR Change = DIVIDE(Actual - PrevMonth, PrevMonth)
+VAR Sign = IF(Change >= 0, "+", "")
+RETURN
+Sign & FORMAT(Change * 100, "0.0") & "% vs previous month"
+
+-- LossAmountDeltaColor: Color del delta de pérdida
+LossAmountDeltaColor = 
+VAR PrevMonth =
+    CALCULATE([Total Loss Amount], DATEADD('dim_date'[Date], -1, MONTH))
+VAR Actual = [Total Loss Amount]
+VAR Change = DIVIDE(Actual - PrevMonth, PrevMonth) * 100
+RETURN
+SWITCH(
+    TRUE(),
+    Change < -2, "#2E8B57",      // verde → mejora
+    ABS(Change) <= 2, "#F28C28", // naranja → estable
+    Change > 2, "#D9534F"        // rojo → empeora
+)
+
+-- ============================================================
+-- 05. MÉTRICAS ADICIONALES
+-- ============================================================
+
+-- Avg Order Value: Ticket promedio por orden
+Avg Order Value = 
+DIVIDE(
+    [Total Sales],
+    DISTINCTCOUNT(fact_orders[order_id]),
+    0
+)
+
+-- ============================================================
+-- FIN DEL ARCHIVO
+-- ============================================================
