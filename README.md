@@ -164,7 +164,7 @@ The original dataset was loaded into PostgreSQL and transformed into a relationa
 
 ### SQL Transformation Script
 
-![SQL Transform](images/postgres_transform_script1.png),![SQL Transform](images/postgres_transform_script2.png)
+![SQL Transform](images/postgres_transform_script1.png)
 
 
 ### PostgreSQL Schema
