@@ -203,6 +203,8 @@ Several decisions were made to ensure that the KPIs reflected the business quest
 
 The first page provides an executive overview of financial performance.
 
+![Page 1](images/page1_financial_performance.png)
+
 **Main KPIs**
 
 | KPI | Value |
@@ -219,13 +221,13 @@ The page combines:
 - Top product categories by sales.
 - Sales vs. margin analysis.
 
-![Page 1](images/page1_financial_performance.png)
-
 ---
 
 ### Page 2 — Supply Chain Diagnostics
 
 The second page focuses on operational delivery performance and financial exposure.
+
+![Page 2](images/page2_diagnostics.png)
 
 **Main KPIs**
 
@@ -244,8 +246,6 @@ The page provides analysis by:
 - Product Category
 
 A decomposition tree is used as an interactive driver exploration tool to investigate how late-delivery performance varies across different dimensions. It is not intended to establish causal relationships.
-
-![Page 2](images/page2_diagnostics.png)
 
 ---
 
@@ -436,9 +436,9 @@ The objective was to build an end-to-end analytical workflow rather than only cr
 
 **Oscar Davila**
 
-- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/your-profile)
-- GitHub: [Your GitHub](https://github.com/oscardavila-data/)
-- Email: [your-professional-email@example.com](oscar.davilaenriquez@gmail.com)
+- LinkedIn: https://www.linkedin.com/in/oscar-davila-58662011b/
+- GitHub: https://github.com/oscardavila-data/
+- Email: oscar.davilaenriquez@gmail.com
 
 ---
 
